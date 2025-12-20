@@ -210,6 +210,10 @@ const App = () => {
   const [isDiscoveryView, setDiscoveryView] = useState(true); // 首次加载默认显示发现（海报）视图
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
+  // 移动端：首页是否展示完全由 mobileTab 控制，避免 isDiscoveryView 残留导致其它 Tab 白屏
+  // 桌面端：保持现有 isDiscoveryView 行为（不影响已正常的桌面端）
+  const showDiscoveryOverlay = isMobileDevice ? mobileTab === "home" : isDiscoveryView;
+  
   // Template Sort State
   const [sortOrder, setSortOrder] = useState("newest"); // newest, oldest, a-z, z-a, random
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
@@ -296,7 +300,6 @@ const App = () => {
   useEffect(() => {
       // 模版 Tab：强制收起模式 + 列表视图
       if (mobileTab === 'templates') {
-          setIsTemplateExpanded(false);
           setMasonryStyleKey('list');
       }
 
@@ -1288,26 +1291,26 @@ const App = () => {
         await waitForImageLoad(imgElement);
     }
 
-    // 预加载二维码（转换为 base64）
+    // 预加载二维码（使用本地文件并转换为 base64）
     const websiteUrl = 'https://promptfill.tanshilong.com/';
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(websiteUrl)}&margin=0`;
+    const localQrCodePath = '/QRCode.png';
     let qrCodeBase64 = null;
     
     try {
-        console.log('正在加载二维码...', qrCodeUrl);
-        const qrResponse = await fetch(qrCodeUrl);
-        if (!qrResponse.ok) throw new Error('二维码加载失败');
+        console.log('正在加载本地二维码...', localQrCodePath);
+        const qrResponse = await fetch(localQrCodePath);
+        if (!qrResponse.ok) throw new Error('本地二维码加载失败');
         const qrBlob = await qrResponse.blob();
         qrCodeBase64 = await new Promise((resolve) => {
             const reader = new FileReader();
             reader.onloadend = () => {
-                console.log('二维码加载成功');
+                console.log('本地二维码加载成功');
                 resolve(reader.result);
             };
             reader.readAsDataURL(qrBlob);
         });
     } catch (e) {
-        console.error("二维码加载失败", e);
+        console.error("本地二维码加载失败", e);
         // 即使失败也继续，会显示占位符
     }
 
@@ -1631,7 +1634,7 @@ const App = () => {
     <div className="flex flex-col md:flex-row h-screen w-screen bg-gradient-to-br from-[#F3F4F6] to-[#E5E7EB] font-sans text-slate-800 overflow-hidden md:p-4 md:gap-4 relative">
       
       {/* Discovery View (Full Screen Overlay) */}
-      {(isDiscoveryView || mobileTab === 'home') ? (
+      {showDiscoveryOverlay ? (
         <DiscoveryView 
           filteredTemplates={filteredTemplates}
           setActiveTemplateId={setActiveTemplateId}
@@ -1643,7 +1646,7 @@ const App = () => {
           posterScrollRef={posterScrollRef}
           setIsPosterAutoScrollPaused={setIsPosterAutoScrollPaused}
           currentMasonryStyle={MASONRY_STYLES[masonryStyleKey]}
-          AnimatedSlogan={AnimatedSlogan}
+          AnimatedSlogan={isMobileDevice ? MobileAnimatedSlogan : AnimatedSlogan}
           t={t}
           TAG_STYLES={TAG_STYLES}
           displayTag={displayTag}
@@ -1661,7 +1664,11 @@ const App = () => {
         <>
           <TemplatesSidebar 
             mobileTab={mobileTab}
-            setDiscoveryView={setDiscoveryView}
+            setDiscoveryView={(val) => {
+              setDiscoveryView(val);
+              // 移动端：侧边栏里的“回到发现页”按钮需要同步切回 mobileTab
+              if (isMobileDevice && val) setMobileTab('home');
+            }}
             activeTemplateId={activeTemplateId}
             setActiveTemplateId={setActiveTemplateId} 
             filteredTemplates={filteredTemplates}
@@ -1869,52 +1876,6 @@ const App = () => {
             )}
         </div>
       </div>
-
-      {/* --- Image View Modal --- */}
-      {zoomedImage && (
-        <div 
-            className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300"
-            onClick={() => setZoomedImage(null)}
-        >
-            <button 
-                className="absolute top-4 right-4 md:top-8 md:right-8 text-white/50 hover:text-white transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-md"
-                onClick={() => setZoomedImage(null)}
-            >
-                <X size={24} />
-            </button>
-            
-            <div className="relative max-w-full max-h-full flex flex-col items-center">
-                <img 
-                    src={zoomedImage} 
-                    alt="Zoomed Preview" 
-                    className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-300"
-                    onClick={(e) => e.stopPropagation()}
-                />
-                
-                {/* View Template Button */}
-                <div className="mt-6 flex gap-4" onClick={(e) => e.stopPropagation()}>
-                    <button
-                        onClick={() => {
-                            const template = INITIAL_TEMPLATES_CONFIG.find(t => t.imageUrl === zoomedImage) || 
-                                           templates.find(t => t.imageUrl === zoomedImage);
-                            
-                            if (template) {
-                                setActiveTemplateId(template.id);
-                                setIsTemplateExpanded(false);
-                            } else if (activeTemplate.imageUrl === zoomedImage) {
-                                setIsTemplateExpanded(false);
-                            }
-                            setZoomedImage(null);
-                        }}
-                        className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-full font-medium shadow-lg shadow-orange-500/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2"
-                    >
-                        <LayoutGrid size={18} />
-                        查看模板
-                    </button>
-                </div>
-            </div>
-        </div>
-      )}
 
           <BanksSidebar 
             mobileTab={mobileTab}
@@ -2205,9 +2166,9 @@ const App = () => {
                             
                             if (template) {
                                 setActiveTemplateId(template.id);
-                                setIsTemplateExpanded(false);
+                                setDiscoveryView(false);
                             } else if (activeTemplate.imageUrl === zoomedImage) {
-                                setIsTemplateExpanded(false);
+                                setDiscoveryView(false);
                             }
                             setZoomedImage(null);
                         }}
@@ -2235,18 +2196,22 @@ const App = () => {
              <span className="text-[10px] font-medium">主页</span>
           </button>
           
-          {/* 模版管理 */}
+          {/* 模版列表 */}
           <button 
-             onClick={() => setMobileTab('templates')}
+             onClick={() => {
+               setMobileTab('templates');
+               setDiscoveryView(false);
+             }}
              className={`flex flex-col items-center justify-center w-full h-full gap-0.5 ${mobileTab === 'templates' ? 'text-orange-600' : 'text-gray-400'}`}
           >
              <FileText size={20} />
-             <span className="text-[10px] font-medium">模版</span>
+             <span className="text-[10px] font-medium">模版列表</span>
           </button>
           
-          {/* 编辑 */}
+          {/* 模版详情 */}
           <button 
              onClick={() => {
+               setDiscoveryView(false);
                // 强制确保有模板被选中，确保状态生效后再切换
                if (templates.length > 0 && !activeTemplateId) {
                  console.log('[编辑按钮] 强制选择第一个模板:', templates[0].id);
@@ -2260,12 +2225,13 @@ const App = () => {
              className={`flex flex-col items-center justify-center w-full h-full gap-0.5 ${mobileTab === 'editor' ? 'text-orange-600' : 'text-gray-400'}`}
           >
              <Edit3 size={20} />
-             <span className="text-[10px] font-medium">编辑</span>
+             <span className="text-[10px] font-medium">模版详情</span>
           </button>
           
-          {/* 词库 */}
+          {/* 词库配置 */}
           <button 
              onClick={() => {
+               setDiscoveryView(false);
                // 强制确保有模板被选中，确保状态生效后再切换
                if (templates.length > 0 && !activeTemplateId) {
                  console.log('[词库按钮] 强制选择第一个模板:', templates[0].id);
@@ -2279,7 +2245,7 @@ const App = () => {
              className={`flex flex-col items-center justify-center w-full h-full gap-0.5 ${mobileTab === 'banks' ? 'text-orange-600' : 'text-gray-400'}`}
           >
              <Settings size={20} />
-             <span className="text-[10px] font-medium">词库</span>
+             <span className="text-[10px] font-medium">词库配置</span>
           </button>
       </div>
 

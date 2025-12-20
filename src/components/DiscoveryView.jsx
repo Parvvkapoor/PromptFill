@@ -30,6 +30,140 @@ export const DiscoveryView = React.memo(({
   setSortOrder,
   setRandomSeed
 }) => {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+  if (isMobile) {
+    return (
+      <div 
+        className="fixed inset-0 z-[100] flex flex-col overflow-y-auto pb-20"
+        style={{ 
+          backgroundImage: 'url(/background1.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
+        <div className="flex flex-col w-full min-h-full px-5 py-8 gap-6">
+          {/* 1. 顶部 SVG 标题区域 */}
+          <div className="w-full flex justify-center px-4">
+            <img 
+              src="/Title.svg" 
+              alt="Prompt Fill Logo" 
+              className="w-full max-w-[280px] h-auto"
+            />
+          </div>
+
+          {/* 2. 动态文字区 */}
+          <div className="w-full">
+            <AnimatedSlogan isActive={true} />
+          </div>
+
+          {/* 3. 功能按钮区域 */}
+          <div className="flex items-center justify-center gap-4 py-2">
+            <button 
+              onClick={() => setIsSortMenuOpen(!isSortMenuOpen)} 
+              className="flex flex-col items-center gap-1.5 group"
+            >
+              <div className="p-3 bg-white rounded-2xl shadow-sm border border-gray-100 group-hover:bg-orange-50 transition-all">
+                <ArrowUpDown size={20} className="text-gray-600 group-hover:text-orange-600" />
+              </div>
+              <span className="text-[10px] font-bold text-gray-500">排序</span>
+              
+              {isSortMenuOpen && (
+                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/60 py-2 min-w-[140px] z-[110] animate-in slide-in-from-top-2 duration-200">
+                  {[
+                    { value: 'newest', label: '最新优先' },
+                    { value: 'oldest', label: '最旧优先' },
+                    { value: 'a-z', label: 'A-Z' },
+                    { value: 'z-a', label: 'Z-A' },
+                    { value: 'random', label: '🎲 随机排序' }
+                  ].map(option => (
+                    <button
+                      key={option.value}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSortOrder(option.value);
+                        if (option.value === 'random') setRandomSeed(Date.now());
+                        setIsSortMenuOpen(false);
+                      }}
+                      className={`w-full text-center px-4 py-2.5 text-xs hover:bg-orange-50 transition-colors ${sortOrder === option.value ? 'text-orange-600 font-bold' : 'text-gray-700'}`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </button>
+
+            <button 
+              onClick={() => setLanguage(language === 'cn' ? 'en' : 'cn')}
+              className="flex flex-col items-center gap-1.5 group"
+            >
+              <div className="p-3 bg-white rounded-2xl shadow-sm border border-gray-100 group-hover:bg-orange-50 transition-all">
+                <Globe size={20} className="text-gray-600 group-hover:text-orange-600" />
+              </div>
+              <span className="text-[10px] font-bold text-gray-500">{language === 'cn' ? '中文' : 'English'}</span>
+            </button>
+
+            <button 
+              onClick={() => setIsSettingsOpen(true)}
+              className="flex flex-col items-center gap-1.5 group"
+            >
+              <div className="p-3 bg-white rounded-2xl shadow-sm border border-gray-100 group-hover:bg-orange-50 transition-all">
+                <Settings size={20} className="text-gray-600 group-hover:text-orange-600" />
+              </div>
+              <span className="text-[10px] font-bold text-gray-500">设置</span>
+            </button>
+
+            <button 
+              onClick={handleRefreshSystemData}
+              className="flex flex-col items-center gap-1.5 group"
+            >
+              <div className="p-3 bg-white rounded-2xl shadow-sm border border-gray-100 group-hover:bg-orange-50 transition-all">
+                <RotateCcw size={20} className="text-gray-600 group-hover:text-orange-600" />
+              </div>
+              <span className="text-[10px] font-bold text-gray-500">同步</span>
+            </button>
+          </div>
+
+          {/* 4. 图像展示（单列） */}
+          <div className="flex flex-col gap-6 mt-2">
+            {filteredTemplates.map(t_item => (
+              <div 
+                key={t_item.id}
+                onClick={() => {
+                  setActiveTemplateId(t_item.id);
+                  setDiscoveryView(false);
+                }}
+                className="w-full bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 active:scale-[0.98] transition-all"
+              >
+                <div className="relative w-full bg-gray-50">
+                  {t_item.imageUrl ? (
+                    <img 
+                      src={t_item.imageUrl} 
+                      alt={t_item.name} 
+                      className="w-full h-auto block"
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full aspect-[4/3] flex items-center justify-center text-gray-300">
+                      <ImageIcon size={48} strokeWidth={1} />
+                    </div>
+                  )}
+                  {/* Title Overlay */}
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-5 pt-10">
+                    <h3 className="text-white font-bold text-lg">{t_item.name}</h3>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div 
       className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden bg-[#F3F4F6]"
